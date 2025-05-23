@@ -1,7 +1,10 @@
 import numpy as np
 
+
 def minimize(f, x0, obj_tol, param_tol, max_iter, type='gradient'):
     x_k = x0
+    x_history = []
+    f_history = []
     for i in range(max_iter):
         x = np.array(x_k, dtype=float)
         if type == "gradient":
@@ -12,14 +15,20 @@ def minimize(f, x0, obj_tol, param_tol, max_iter, type='gradient'):
             f_x, g_x, h_x = f(x, True)
             p_k = np.linalg.solve(h_x, -g_x)
             alpha = set_alpha(f, p_k, x)
+        x_history.append(x)
+        f_history.append(f_x)
         print(f'Iteration {i:3d}: x = {x}, f(x) = {f_x:.6f}')
         x_k = x + alpha * p_k
         f_x_k, _ = f(x_k, False)
         if can_terminate(x_k, x, f_x_k, f_x, obj_tol, param_tol):
+            x_history.append(x_k)
+            f_history.append(f_x_k)
             print(f'Success! Final iteration: x = {x_k}, f(x) = {f_x_k:.6f}')
-            return x_k, f_x_k, True
+            return x_k, f_x_k, True, x_history, f_history
+    x_history.append(x_k)
+    f_history.append(f_x_k)
     print(f'Failure... Final iteration: x = {x_k}, f(x) = {f_x_k:.6f}')
-    return x_k, f_x_k, False
+    return x_k, f_x_k, False, x_history, f_history
 
 
 def set_alpha(f, p_k, x, rho=.5, c=.01):
@@ -35,6 +44,6 @@ def set_alpha(f, p_k, x, rho=.5, c=.01):
 
 
 def can_terminate(x_k, x, f_x_k, f_x, obj_tol, param_tol):
-    obj_change = abs(f_x_k, f_x)
+    obj_change = abs(f_x_k - f_x)
     param_change = np.linalg.norm(x_k - x)
     return obj_change < obj_tol or param_change < param_tol
